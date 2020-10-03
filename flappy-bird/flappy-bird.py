@@ -17,8 +17,8 @@ pygame.font.init()  # init font
 WIN_WIDTH = 600
 WIN_HEIGHT = 800
 FLOOR = 730
-STAT_FONT = pygame.font.SysFont("comicsans", 50)
-END_FONT = pygame.font.SysFont("comicsans", 70)
+STAT_FONT = pygame.font.SysFont("Arial", 50)
+END_FONT = pygame.font.SysFont("Arial", 70)
 DRAW_LINES = False
 
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -318,15 +318,15 @@ def eval_genomes(genomes, config):
     # start by creating lists holding the genome itself, the
     # neural network associated with the genome and the
     # bird object that uses that network to play
-    nets = []
-    birds = []
+    nets = []   # List of all the neural networks
+    birds = []  # List of all the genomes
     ge = []
-    for genome_id, genome in genomes:
-        genome.fitness = 0  # start with fitness level of 0
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
-        nets.append(net)
-        birds.append(Bird(230,350))
-        ge.append(genome)
+    for _, genome in genomes:
+        genome.fitness = 0      # start with fitness level of 0
+        net = neat.nn.FeedForwardNetwork.create(genome, config)     # Create the neural network
+        nets.append(net)    # Add the neural network to the list of neural networks
+        birds.append(Bird(230,350))     # Add new bird to the list of birds
+        ge.append(genome)   # Add genome to the list of genomes
 
     base = Base(FLOOR)
     pipes = [Pipe(700)]
@@ -336,7 +336,7 @@ def eval_genomes(genomes, config):
 
     run = True
     while run and len(birds) > 0:
-        clock.tick(30)
+        clock.tick(100)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -345,19 +345,22 @@ def eval_genomes(genomes, config):
                 quit()
                 break
 
+        # determine whether to use the first or second pipe on the screen for neural network input
         pipe_ind = 0
         if len(birds) > 0:
-            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():  # determine whether to use the first or second
-                pipe_ind = 1                                                                 # pipe on the screen for neural network input
+            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():  
+                pipe_ind = 1                                                                 
 
-        for x, bird in enumerate(birds):  # give each bird a fitness of 0.1 for each frame it stays alive
-            ge[x].fitness += 0.1
+        for x, bird in enumerate(birds):
+            ge[x].fitness += 0.1    # give each bird a fitness of 0.1 for each frame it stays alive
+
             bird.move()
 
-            # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
-            output = nets[birds.index(bird)].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom)))
+            # Pass bird location, top pipe location, bottom pipe location and distance between the bird and the pipe, into the network to determine whether to jump or not
+            output = nets[birds.index(bird)].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom), abs(bird.x - pipes[pipe_ind].x)))
 
-            if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
+            # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
+            if output[0] > 0.5:
                 bird.jump()
 
         base.move()
@@ -366,13 +369,14 @@ def eval_genomes(genomes, config):
         add_pipe = False
         for pipe in pipes:
             pipe.move()
-            # check for collision
+            # check for collision for every bird
             for bird in birds:
                 if pipe.collide(bird, win):
-                    ge[birds.index(bird)].fitness -= 1
-                    nets.pop(birds.index(bird))
-                    ge.pop(birds.index(bird))
-                    birds.pop(birds.index(bird))
+                    # Handle the bird that collides with a pipe
+                    ge[birds.index(bird)].fitness -= 1  # Reduce by 1 the fitness of the genome of the bird 
+                    nets.pop(birds.index(bird))     # Remove the neural network associated with the bird from the list of neural networks
+                    ge.pop(birds.index(bird))       # Remove the gene of that bird from the list of genomes
+                    birds.pop(birds.index(bird))    # Remove the bird from the list of birds
 
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 rem.append(pipe)
@@ -385,7 +389,7 @@ def eval_genomes(genomes, config):
             score += 1
             # can add this line to give more reward for passing through a pipe (not required)
             for genome in ge:
-                genome.fitness += 5
+                genome.fitness += 5     # Increase by 5 the fitness of the birds that get through the pipe
             pipes.append(Pipe(WIN_WIDTH))
 
         for r in rem:
@@ -393,14 +397,16 @@ def eval_genomes(genomes, config):
 
         for bird in birds:
             if bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50:
-                nets.pop(birds.index(bird))
-                ge.pop(birds.index(bird))
-                birds.pop(birds.index(bird))
+                # Handle the bird that hits the ground or that goes above the screen
+                nets.pop(birds.index(bird))     # Remove the neural network associated with the bird from the list of neural networks
+                ge.pop(birds.index(bird))       # Remove the gene of that bird from the list of genomes
+                birds.pop(birds.index(bird))     # Remove the bird from the list of birds
 
         draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
 
         # break if score gets large enough
         '''if score > 20:
+            # Save the best bird
             pickle.dump(nets[0],open("best.pickle", "wb"))
             break'''
     
@@ -417,16 +423,16 @@ def run(config_file):
                          config_file)
 
     # Create the population, which is the top-level object for a NEAT run.
-    p = neat.Population(config)
+    population = neat.Population(config)
 
     # Add a stdout reporter to show progress in the terminal.
-    p.add_reporter(neat.StdOutReporter(True))
+    population.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
-    p.add_reporter(stats)
+    population.add_reporter(stats)
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 50)
+    winner = population.run(eval_genomes, 50)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))
