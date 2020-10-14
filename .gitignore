@@ -1,0 +1,13 @@
+.DS_Store
+
+flappy-bird/__pycache__
+
+dino-google/__pycache__
+dino-google/.DS_Store
+dino-google/images/.DS_Store
+dino-google/images/Bird/.DS_Store
+dino-google/images/Cactus/.DS_Store
+dino-google/images/Dino/.DS_Store
+dino-google/images/Others/.DS_Store
+
+cars/.DS_Store

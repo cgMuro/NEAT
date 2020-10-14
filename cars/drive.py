@@ -12,7 +12,6 @@ MAP = 'map1.png'
 
 class Car:
     def __init__(self):
-        # self.surface = random.choice([pygame.image.load("car.png"), pygame.image.load("car1.jpg")])
         self.surface = pygame.image.load("car.png")
         self.surface = pygame.transform.scale(self.surface, (100, 100))
         self.rotate_surface = self.surface

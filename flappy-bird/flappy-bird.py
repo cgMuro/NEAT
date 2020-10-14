@@ -19,7 +19,7 @@ WIN_HEIGHT = 800
 FLOOR = 730
 STAT_FONT = pygame.font.SysFont("Arial", 50)
 END_FONT = pygame.font.SysFont("Arial", 70)
-DRAW_LINES = False
+DRAW_LINES = True
 
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
